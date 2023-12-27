@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <title>Randomness in JavaScript</title>
+        <link rel="stylesheet" href="../style.css">
+    </head>
+    <body >
+        <main>
+            
+  <h1 id="randomness-in-javascript">Randomness in JavaScript</h1>
+  <div><address>Travis Ennis</address></div>
+  
+<p>As I started to learn to code generative art, I came to realize that randomness is a huge part of the toolset. Most of the generative art I have written relies on randomness throughout the code; I&#39;ll use randomness to pick my inputs, or choose my color palette, or alter the program&#39;s execution. Randomness is so central to generative art that I have spent the last seveal months trying to understand it better. What folllows is brief introduction of random number generation in JavaScript.</p>
+<p>JavaScript provides a standard function, <code>Math.random</code>, that is defined in the <a href="http://www.ecma-international.org/ecma-262/11.0/index.html#sec-math.random" target="_blank" rel="noreferrer">ECMAScript Specification</a>. It takes no arguments and returns a positive number from 0 up to but not including 1. For most purposes, <code>Math.random</code> is fine, but it does have its drawbacks. First, its algorithm is not defined and can vary from implementation to implementation. In practice, it seems that the major browsers and V8/Node have settled on <code>xorshift128+</code> as the algorithm, but that is not guaranteed (see <a href="https://v8.dev/blog/math-random" target="_blank" rel="noreferrer">There’s Math.random(), and then there’s Math.random() · V8</a>). Second, <code>Math.random</code> is not cryptographically secure. In most cases, one doesn&#39;t need a cryptographically secure PRNG, but if you do, then <code>Math.random</code> is not for you. In browsers, this deficiency has been addressed with <code>window.crypto.getRandomValues</code>. You could create an equivalent of <code>Math.random</code> that is backed by this API roughly like so:</p>
+<pre><code class="language-javascript">function secureRandom() {
+    const arr = new Uint32Array(1)
+    windows.crypto.getRandomValues(arr)
+    return arr[0] / 4294967296
+}</code></pre>
+<p>In reality you would never do this. This would be much less performant than a simple call to <code>Math.random</code> and unless you are doing hashing, signature generation, or encryption/decryption, there is little need for it. And it still suffers from the third issue with built-in random function in JavaScript - no ability to repeat sequences.</p>
+<p>All random number generators are pseudo-random number generators, which means they generate sequences of numbers based on algorithm that alters an intial seed. With a different seed, you get a different sequence, but with the same seed the random number generator will repeat the same sequence every time. Unfortuantely you can&#39;t seed the built-in <code>Math.random</code> or <code>window.crypto.getRandomValues</code>. You might ask why you would want to control the seed of the algorithm, but sometimes you need a complex seed to make your random sequence less predictable and sometimes you need a sequence that is completely predictable. This is frequently the case in generative art when you would want to recreate a piece of art. That predictability comes from being able to provide the seed. There are many seedable random number generators available in JavaScript:</p>
+<ul>
+<li><a href="https://github.com/davidbau/seedrandom" target="_blank" rel="noreferrer">davidbau/seedrandom: seeded random number generator for Javascript</a></li>
+<li><a href="/https://github.com/bryc/code/blob/master/jshash/PRNGs/" target="_blank" rel="noreferrer">Pseudorandom number generators</a></li>
+<li><a href="https://github.com/nquinlan/better-random-numbers-for-javascript-mirror" target="_blank" rel="noreferrer">Better Random Numbers for Javascript</a></li>
+</ul>
+<p>In generative art libraries, there have been several choices made:</p>
+<ul>
+<li><a href="https://p5js.org/" target="_blank" rel="noreferrer">p5.js</a> uses <code>LCG</code></li>
+<li><a href="https://threejs.org/" target="_blank" rel="noreferrer">three.js</a> uses the Park-Miller algorithm for a seedable PRNG, but otherwise uses <code>Math.random</code></li>
+<li><a href="https://github.com/LingDong-/q5xjs" target="_blank" rel="noreferrer">q5xjs</a> uses <code>Alea</code></li>
+</ul>
+<p>Which you choose are largely based on your use case, but for me I typically turn to the <code>mulberry32</code> implementation:</p>
+<pre><code class="language-javascript">function mulberry32(a) {
+    return function() {
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      var t = Math.imul(a ^ a &gt;&gt;&gt; 15, 1 | a);
+      t = t + Math.imul(t ^ t &gt;&gt;&gt; 7, 61 | t) ^ t;
+      return ((t ^ t &gt;&gt;&gt; 14) &gt;&gt;&gt; 0) / 4294967296;
+    }
+}</code></pre>
+<p>It&#39;s a minimalistic, 32-bit implemtentation that is pretty fast in JavaScript and has good randomness. And despite being 32-bit, its period (how long the random sequence goes before repeating) is still fairly large at around 4 billion. An 128-bit algorithm would have a larger period, but I don&#39;t have a need for sequences that large.</p>
+<p>Once you have a seedable PRNG implementation, you have to choose how to generate a seed. At this point I base my strategy for selecting a seed on this article, <a href="https://www.r-bloggers.com/how-to-select-a-seed-for-simulation-or-randomization/" target="_blank" rel="noreferrer">How to select a seed for simulation or randomization | R-bloggers</a>, as it seems a good enough strategy as any. In JavaScript, the code would be:</p>
+<pre><code class="language-javascript">const seed = Date.now() % 10000</code></pre>
+<p>but if you want to go further, then an hash function could be used such as this MurmurHash3 implementation:</p>
+<pre><code class="language-javascript">function xmur3 (str) {
+  let h = 1779033703 ^ str.length
+  for (let i = 0; i &lt; str.length; i++) {
+    h = Math.imul(h ^ str.charCodeAt(i), 3432918353)
+    h = h &lt;&lt; 13 | h &gt;&gt;&gt; 19
+  }
+  return function () {
+    h = Math.imul(h ^ h &gt;&gt;&gt; 16, 2246822507)
+    h = Math.imul(h ^ h &gt;&gt;&gt; 13, 3266489909)
+    return (h ^= h &gt;&gt;&gt; 16) &gt;&gt;&gt; 0
+  }
+}</code></pre>
+<p>which could be used as such:</p>
+<pre><code class="language-javascript">const seed = xmur3(&#39;&#39; + Date.now() % 10000)
+const rand = mulberry32(seed())
+rand()</code></pre>
+<p>A good seed sometimes makes all the difference in the quality of the random number sequence being generated.</p>
+<p>Now that we can generate repeatable sequences of random numbers, we can put them to use. I find the following two functions to be useful additions:</p>
+<pre><code class="language-javascript">function randomFloat (min, max) {
+  if (!max) {
+    max = min
+    min = 0
+  }
+
+  return rand() * (max - min) + min
+}
+
+function randomInt (min, max) {
+  if (!max) {
+    max = min
+    min = 0
+  }
+
+  return Math.floor(randomFloat(min, max))
+}</code></pre>
+<p>I can use <code>randomFloat</code> to randomly generate points on a canvas or RGB values for random colors.</p>
+<pre><code class="language-javascript">// generate a random point on the canvas
+const x = randomFloat(context.canvas.width)
+const y = randomFloat(context.canvas.height)
+
+// generate random rgb values
+const r = randomFloat(256)
+const g = randomFloat(256)
+const b = randomFloat(256)
+const color = `rgb(${r}, ${g}, ${b})`</code></pre>
+<p>I can use <code>randomInt</code> to choose random indexes of an array. In fact, a <code>pick</code> function could be written to take advantage of that so that I can get a random element from an array:</p>
+<pre><code class="language-javascript">function pick (array) {
+  if (array.length === 0) return undefined
+  return array[randomInt(array.length)]
+}</code></pre>
+<p>This just scratches the surface of what you can do with random numbers. Over time, you&#39;ll find other uses for randomness, such as randomly shuffling arrays, adding probability and chance to a program&#39;s execution, etc. There is plenty more to still learn.</p>
+            
+        </main>
+        <footer>
+            <p>&#169; 2021 Travis Ennis, All rights reserved.</p>
+        </footer>
+        
+    </body>
+</html>

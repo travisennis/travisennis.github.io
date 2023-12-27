@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <title> JavaScript Generators</title>
+        <link rel="stylesheet" href="../style.css">
+    </head>
+    <body >
+        <main>
+            
+  <h1 id="javascript-generators">JavaScript Generators</h1>
+  <div><address>Travis Ennis</address></div>
+  
+<p>This is some background and references that I put together while developing my personal generator library, <a href="https://github.com/travisennis/js-itertools" target="_blank" rel="noreferrer">travisennis/js-itertools</a>.</p>
+<h3 id="background">Background</h3>
+<p>Generators and iterators are constructs that have long existed in many languages. I first ran into over 15 years go in Python and then discovered a similar language feature in F#. I found them to be powerful and useful tools. When they were first proposed for Javascript was way back in 2007 when they were proposed for ECMAScript 4, which was later abandoned. But at the time, a version of interators and generators existed that were very similar to Python&#39;s implementation and you could find them implemented both in Mozilla&#39;s Rhino and Spidermonkey Javascript engines. When I first implemented this library back in 2008 or 2009, I was mostly trying to copy the standard itertools library that could be found in Python so that I could use it for server-side scripting in Rhino. After ES4 was shelved, generators were redeveloped and the version of iterators and generators that exist today in Javascript is still very similar although a few things are different. The differences range from the minor, such as the <code>StopIteration</code> error being replaced by a <code>done</code> property that is on the object returned from a call to <code>next()</code>: <code>{done: true}</code>, to the major with the abandonment of generator expressions which were a concise and elegant way to construct new generators (I kind of miss these since they made is pretty trivial to port Python code that used generators into Javascript). What&#39;s left though is still extremely powerful.</p>
+<p>Generators are not as well known as some other newer additions to the Javascript language, such as Promises and async/await, which had immediate and practical impacts on how many Javascript developers write code. Generators on the other hand are seemingly little used directly, although their inclusion in the language does make other, more well-known features, possible. For that reason they are worth knowing about, both in terms of how they work and how to use them.</p>
+<p>If you have written a lot of Python, then you are probably familiar with most widely used generator in that language, the <code>range</code> function. It&#39;s the most widely used for good reason. You&#39;ve probably seen the following in everywhere in Javascript:</p>
+<pre><code class="language-javascript">for(let i = 0; i &lt; 100; i++) {
+    console.log(i)
+}</code></pre>
+<p>Using the range generator, the above code would be written as follows:</p>
+<pre><code class="language-javascript">for(let i of range(100)) {
+    console.log(i)
+}</code></pre>
+<p>The <code>range</code> function will start with 0 and return every number up to, but not including 100. If you want to start at 10, then you would write <code>range(10, 100)</code> and if you wanted to count by fives, then you would write <code>range(10, 100, 5)</code>. The <code>range</code> function is incredible versatile for writing loops. When looping through generator functions like this, what you are actually doing is calling the <code>next()</code> function on the generator itself. Without a loop you would interact with the generator like so:</p>
+<pre><code class="language-javascript">const r = range(10)
+r.next() // {value: 0, done: false}
+r.next() // {value: 1, done: false}
+...
+r.next() // {value: 9, done: true}
+r.next() // {value: undefined, done: true}</code></pre>
+<p>The values the generator function returns, or yields, are generated each time the generator&#39;s <code>next()</code> method is called. There are some fairly interesting implications of this that need knowing. Let&#39;s say you write a generator function that counts numbers:</p>
+<pre><code class="language-javascript">const count = function * (start = 0, step = 1) {
+  for (let i = start; true; i += step) {
+    yield i
+  }
+}</code></pre>
+<p>This function won&#39;t allocate an infinite amount of numbers, but you could call <code>next()</code> on this generator and always get the next number, forever. A sequence this large doesn&#39;t take an infinite amount of memory since the values are generated as needed. But, before careful, because this:</p>
+<pre><code class="language-javascript">for(let i of count()) {
+    console.log(i)
+}</code></pre>
+<p>would result in an infinite loop. Because of this you must be aware if the generator you are using does or does not stop yielding values. You may ask why would you ever want a generator that effectively never stops, but there are uses. For example, an <code>enumerator()</code> generator written like so:</p>
+<pre><code class="language-javascript">const enumerate = function * (iterable) {
+  yield * zip(count(), iterable)
+}
+
+const e = enumerate(range(0, 1000, 10))
+console.log(e.next().value)</code></pre>
+<p>Would use count to enumerate the the amount of items in the providing iterable. The <code>zip</code> generator takes both iterables and returns a tuple (in current Javascript it is just a two element array) such as <code>[0, 0]</code>, <code>[1, 10]</code>, <code>[2, 20]</code>... <code>[100, 990]</code> and so on until the provided iterable is exhausted. No matter the length of the iterable we provide, <code>count()</code> will give us a value since it never ends.</p>
+<p>Take a look at the references below. Generators are pretty fascinating in their own right and definitely worth learning.</p>
+<h3 id="references">References</h3>
+<h4 id="documentation-and-tutorials">Documentation and Tutorials</h4>
+<ul>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Iterators_and_Generators" target="_blank" rel="noreferrer">Iterators and generators - JavaScript | MDN</a></li>
+<li><a href="https://www.taniarascia.com/understanding-generators-in-javascript/" target="_blank" rel="noreferrer">Understanding Generators in JavaScript | Tania Rascia</a></li>
+</ul>
+<h4 id="other-javascript-implementations">Other Javascript Implementations</h4>
+<ul>
+<li><a href="https://github.com/nvie/itertools.js" target="_blank" rel="noreferrer">nvie/itertools.js: JavaScript port of Python&#39;s awesome itertools stdlib</a></li>
+<li><a href="https://github.com/abozhilov/ES-Iter" target="_blank" rel="noreferrer">abozhilov/ES-Iter: Itertools for JavaScript</a></li>
+</ul>
+<h4 id="python-generators">Python Generators</h4>
+<ul>
+<li><a href="https://docs.python.org/3/library/itertools.html" target="_blank" rel="noreferrer">itertools — Functions creating iterators for efficient looping — Python Documentation</a></li>
+<li><a href="https://docs.python.org/3/howto/functional.html" target="_blank" rel="noreferrer">Functional Programming HOWTO — Python Documentation</a></li>
+</ul>
+            
+        </main>
+        <footer>
+            <p>&#169; 2021 Travis Ennis, All rights reserved.</p>
+        </footer>
+        
+    </body>
+</html>
