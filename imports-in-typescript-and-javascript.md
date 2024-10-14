@@ -2,7 +2,7 @@
 
 My first real experience with writing imports and exports for Javascript in Node was via Typescript where with the benefit of the compiler I was able to write the following:
 
-``` javascript
+``` typescript
 // module.ts
 export function add(x: number, y: number): number {
     return x + y
@@ -143,7 +143,7 @@ module_js_1.default(1, 2);
 
 All of this makes the above code that defines the `add` equivalent to this Typescript/ESModule code that defines a `mul` function:
 
-``` javascript
+``` typescript
 export default function mul(x: number, y: number): number {
     return x * y;
 }
@@ -207,8 +207,7 @@ test.imul(5, 1)
 
 It is now recommended to use `esModuleInterop` to with Typescript and doing so should make it easier to write code that adheres to the ESModules spec. This is a good thing, because in my opinion the best way to write Typescript is as nothing more than Javascript with types added.
 
-
-### References
+## References
 
 - [Modules: CommonJS modules | Node.js Documentation](https://nodejs.org/api/modules.html)
 - [Modules: ECMAScript modules | Node.js Documentation](https://nodejs.org/api/esm.html)

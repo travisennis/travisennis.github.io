@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>imports-in-typescript-and-javascript</title>
+  <style>
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      background-color: #1a1a1a;
+      border: none;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.3.1/styles/monokai.min.css">
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.3.1/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script>
+</head>
+<body>
+<h1 id="imports-in-typescript-and-javascript">Imports in Typescript and
+Javascript</h1>
+<p>My first real experience with writing imports and exports for
+Javascript in Node was via Typescript where with the benefit of the
+compiler I was able to write the following:</p>
+<pre class="typescript"><code>// module.ts
+export function add(x: number, y: number): number {
+    return x + y
+}
+
+// main.ts
+import { add } from &#39;./module&#39;;
+
+add(1, 2)</code></pre>
+<p>Because of this I didn’t really need to understand how this code was
+compiled into the Javascript that supported the CommonJS way of
+exporting and importing code. So, to start at the beginning, how did one
+export and import code using CommonJS in Node?</p>
+<pre class="javascript"><code>// module.js
+exports.add = function(x, y) {
+    return x + y
+}
+
+// main.js
+const { add } = require(&#39;./module.js&#39;);
+
+add(1, 2)</code></pre>
+<p>Well, actually, that is just one way. The following are also
+possible:</p>
+<pre class="javascript"><code>// module.js
+exports.add = function(x, y) {
+    return x + y
+}
+
+// main.js
+const module = require(&#39;./module.js&#39;);
+
+module.add(1, 2)</code></pre>
+<p>and</p>
+<pre class="javascript"><code>// module.js
+module.exports.add = function(x, y) {
+    return x + y
+}
+
+// main.js
+const { add } = require(&#39;./module.js&#39;);
+
+add(1, 2)</code></pre>
+<p>and</p>
+<pre class="javascript"><code>// module.js
+module.exports = {
+    add: function(x, y) {
+        return x + y
+    }
+}
+
+// main.js
+const { add } = require(&#39;./module.js&#39;);
+
+add(1, 2)</code></pre>
+<p>Basically, Typescript gives us an ability to do imports and exports
+using the newer ESModules spec and it would compile that code into
+CommmonJS export/requires when targeting Node. For the most part, it is
+pretty straightforward to understand how the Typescript code would look
+in the equivalent CommonJS. And it is easy to reason about how one would
+interop with the other.</p>
+<pre class="javascript"><code>// module.js
+exports.add = function(x, y) {
+    return x + y
+}
+
+// main.ts
+import { add } from &#39;./module.js&#39;;
+
+add(1, 2)</code></pre>
+<p>The problem is that the following is valid CommonJS code:</p>
+<pre class="javascript"><code>const add = function (x, y) {
+    return x + y;
+};
+
+module.exports = add</code></pre>
+<p>And if you export your code in this way, then you can’t import this
+in the way you would expect in Typescript:</p>
+<pre class="javascript"><code>import add from &#39;./module.js&#39;;
+
+add(1, 2);</code></pre>
+<p>and</p>
+<pre class="javascript"><code>import { add } from &#39;./module.js&#39;;
+
+add(1, 2);</code></pre>
+<p>are not valid. Instead you would have to import this code like
+so:</p>
+<pre class="javascript"><code>import * as add from &#39;./module.js&#39;;
+
+add(1, 2);</code></pre>
+<p>Unfortunately, this workaround is not valid under the ESModule spec,
+becuase <code>add</code> could only be an object here. It could not be a
+callable.</p>
+<p>To combat this problem, Typescript introduced the
+<code>esModuleInterop</code> flag, which allows us to import CommonJS
+modules in compliance with the ESModules spec. So, with this flag set to
+true, you can import the code like so:</p>
+<pre class="javascript"><code>import add from &#39;./module.js&#39;;
+
+add(1, 2);</code></pre>
+<p>And it will work. The Typescript code will be compiled to this
+Javascript code:</p>
+<pre class="javascript"><code>var __importDefault = (this &amp;&amp; this.__importDefault) || function (mod) {
+    return (mod &amp;&amp; mod.__esModule) ? mod : { &quot;default&quot;: mod };
+};
+Object.defineProperty(exports, &quot;__esModule&quot;, { value: true });
+const module_js_1 = __importDefault(require(&quot;./module.js&quot;));
+module_js_1.default(1, 2);</code></pre>
+<p>All of this makes the above code that defines the <code>add</code>
+equivalent to this Typescript/ESModule code that defines a
+<code>mul</code> function:</p>
+<pre class="typescript"><code>export default function mul(x: number, y: number): number {
+    return x * y;
+}</code></pre>
+<p>Both of these can now be imported in the same way:</p>
+<pre class="javascript"><code>import add from &#39;./module.js&#39;;
+import mul from &#39;./module2&#39;;
+
+add(1, 2);
+mul(3, 4)</code></pre>
+<p>Like anything in the world of Javascript there are many ways to
+accomplish something. All of the following examples are valid.</p>
+<pre class="javascript"><code>// module.js
+exports.sub = function(x, y) {
+    return x - y;
+}
+
+exports.div = function(x, y) {
+    return x / y;
+}
+
+// main.ts
+import math, { sub } from &#39;./module.js&#39;;
+
+sub(6, 5)
+math.div(9, 3)</code></pre>
+<pre class="javascript"><code>// module.js
+module.exports = {
+    pow: function(x, y) {
+        return Math.pow(x, y)
+    },
+    imul: function(x, y) {
+        return Math.imul(x, y)
+    }
+}
+
+// main.ts
+import { imul, pow } from &#39;./module4.js&#39;;
+
+// or
+
+import test from &#39;./module4.js&#39;;
+
+pow(4, 2)
+imul(5, 2)
+
+// or
+
+test.pow(4, 2)
+test.imul(5, 1)</code></pre>
+<p>It is now recommended to use <code>esModuleInterop</code> to with
+Typescript and doing so should make it easier to write code that adheres
+to the ESModules spec. This is a good thing, because in my opinion the
+best way to write Typescript is as nothing more than Javascript with
+types added.</p>
+<h2 id="references">References</h2>
+<ul>
+<li><a href="https://nodejs.org/api/modules.html">Modules: CommonJS
+modules | Node.js Documentation</a></li>
+<li><a href="https://nodejs.org/api/esm.html">Modules: ECMAScript
+modules | Node.js Documentation</a></li>
+<li><a
+href="https://developer.mozilla.org/en-US/docs/web/javascript/reference/statements/export">export
+- Web technology for developers | MDN</a></li>
+<li><a
+href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/import">import
+- JavaScript | MDN</a></li>
+<li><a
+href="https://www.typescriptlang.org/tsconfig#esModuleInterop">TypeScript:
+TSConfig Reference - esModuleInterop</a></li>
+</ul>
+</body>
+</html>

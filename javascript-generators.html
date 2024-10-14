@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>javascript-generators</title>
+  <style>
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      background-color: #1a1a1a;
+      border: none;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.3.1/styles/monokai.min.css">
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.3.1/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script>
+</head>
+<body>
+<h1 id="javascript-generators">JavaScript Generators</h1>
+<p>This is some background and references that I put together while
+developing my personal generator library, <a
+href="https://github.com/travisennis/js-itertools">travisennis/js-itertools</a>.</p>
+<h2 id="background">Background</h2>
+<p>Generators and iterators are constructs that have long existed in
+many languages. I first ran into over 15 years go in Python and then
+discovered a similar language feature in F#. I found them to be powerful
+and useful tools. When they were first proposed for Javascript was way
+back in 2007 when they were proposed for ECMAScript 4, which was later
+abandoned. But at the time, a version of interators and generators
+existed that were very similar to Python’s implementation and you could
+find them implemented both in Mozilla’s Rhino and Spidermonkey
+Javascript engines. When I first implemented this library back in 2008
+or 2009, I was mostly trying to copy the standard itertools library that
+could be found in Python so that I could use it for server-side
+scripting in Rhino. After ES4 was shelved, generators were redeveloped
+and the version of iterators and generators that exist today in
+Javascript is still very similar although a few things are different.
+The differences range from the minor, such as the
+<code>StopIteration</code> error being replaced by a <code>done</code>
+property that is on the object returned from a call to
+<code>next()</code>: <code>{done: true}</code>, to the major with the
+abandonment of generator expressions which were a concise and elegant
+way to construct new generators (I kind of miss these since they made is
+pretty trivial to port Python code that used generators into
+Javascript). What’s left though is still extremely powerful.</p>
+<p>Generators are not as well known as some other newer additions to the
+Javascript language, such as Promises and async/await, which had
+immediate and practical impacts on how many Javascript developers write
+code. Generators on the other hand are seemingly little used directly,
+although their inclusion in the language does make other, more
+well-known features, possible. For that reason they are worth knowing
+about, both in terms of how they work and how to use them.</p>
+<p>If you have written a lot of Python, then you are probably familiar
+with most widely used generator in that language, the <code>range</code>
+function. It’s the most widely used for good reason. You’ve probably
+seen the following in everywhere in Javascript:</p>
+<pre class="javascript"><code>for(let i = 0; i &lt; 100; i++) {
+    console.log(i)
+}</code></pre>
+<p>Using the range generator, the above code would be written as
+follows:</p>
+<pre class="javascript"><code>for(let i of range(100)) {
+    console.log(i)
+}</code></pre>
+<p>The <code>range</code> function will start with 0 and return every
+number up to, but not including 100. If you want to start at 10, then
+you would write <code>range(10, 100)</code> and if you wanted to count
+by fives, then you would write <code>range(10, 100, 5)</code>. The
+<code>range</code> function is incredible versatile for writing loops.
+When looping through generator functions like this, what you are
+actually doing is calling the <code>next()</code> function on the
+generator itself. Without a loop you would interact with the generator
+like so:</p>
+<pre class="javascript"><code>const r = range(10)
+r.next() // {value: 0, done: false}
+r.next() // {value: 1, done: false}
+...
+r.next() // {value: 9, done: true}
+r.next() // {value: undefined, done: true}</code></pre>
+<p>The values the generator function returns, or yields, are generated
+each time the generator’s <code>next()</code> method is called. There
+are some fairly interesting implications of this that need knowing.
+Let’s say you write a generator function that counts numbers:</p>
+<pre class="javascript"><code>const count = function * (start = 0, step = 1) {
+  for (let i = start; true; i += step) {
+    yield i
+  }
+}</code></pre>
+<p>This function won’t allocate an infinite amount of numbers, but you
+could call <code>next()</code> on this generator and always get the next
+number, forever. A sequence this large doesn’t take an infinite amount
+of memory since the values are generated as needed. But, before careful,
+because this:</p>
+<pre class="javascript"><code>for(let i of count()) {
+    console.log(i)
+}</code></pre>
+<p>would result in an infinite loop. Because of this you must be aware
+if the generator you are using does or does not stop yielding values.
+You may ask why would you ever want a generator that effectively never
+stops, but there are uses. For example, an <code>enumerator()</code>
+generator written like so:</p>
+<pre class="javascript"><code>const enumerate = function * (iterable) {
+  yield * zip(count(), iterable)
+}
+
+const e = enumerate(range(0, 1000, 10))
+console.log(e.next().value)</code></pre>
+<p>Would use count to enumerate the the amount of items in the providing
+iterable. The <code>zip</code> generator takes both iterables and
+returns a tuple (in current Javascript it is just a two element array)
+such as <code>[0, 0]</code>, <code>[1, 10]</code>, <code>[2, 20]</code>…
+<code>[100, 990]</code> and so on until the provided iterable is
+exhausted. No matter the length of the iterable we provide,
+<code>count()</code> will give us a value since it never ends.</p>
+<p>Take a look at the references below. Generators are pretty
+fascinating in their own right and definitely worth learning.</p>
+<h3 id="references">References</h3>
+<h4 id="documentation-and-tutorials">Documentation and Tutorials</h4>
+<ul>
+<li><a
+href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Iterators_and_Generators">Iterators
+and generators - JavaScript | MDN</a></li>
+<li><a
+href="https://www.taniarascia.com/understanding-generators-in-javascript/">Understanding
+Generators in JavaScript | Tania Rascia</a></li>
+</ul>
+<h4 id="other-javascript-implementations">Other Javascript
+Implementations</h4>
+<ul>
+<li><a href="https://github.com/nvie/itertools.js">nvie/itertools.js:
+JavaScript port of Python’s awesome itertools stdlib</a></li>
+<li><a href="https://github.com/abozhilov/ES-Iter">abozhilov/ES-Iter:
+Itertools for JavaScript</a></li>
+</ul>
+<h4 id="python-generators">Python Generators</h4>
+<ul>
+<li><a href="https://docs.python.org/3/library/itertools.html">itertools
+— Functions creating iterators for efficient looping — Python
+Documentation</a></li>
+<li><a href="https://docs.python.org/3/howto/functional.html">Functional
+Programming HOWTO — Python Documentation</a></li>
+</ul>
+</body>
+</html>

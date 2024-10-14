@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>using-try-in-typepscript</title>
+  <style>
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      background-color: #1a1a1a;
+      border: none;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.3.1/styles/monokai.min.css">
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.3.1/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script>
+</head>
+<body>
+<h1 id="using-try-in-typescript">Using Try in Typescript</h1>
+<p>The Try type is a programming construct used to represent the result
+of an operation that can either succeed or fail. It encapsulates a value
+of a specific type (T) if the operation succeeds, or an error (E) if the
+operation fails. This type is particularly useful in functional
+programming and error handling, as it allows functions to return results
+that clearly indicate success or failure without relying on exceptions
+or special return code. I originally came across the concept in
+Scala.</p>
+<p>The benefits of the Try type are:</p>
+<ul>
+<li><strong>Explicit Error Handling:</strong> Using Try makes error
+handling explicit. Callers of a function that returns a Try type must
+handle both success and failure cases.</li>
+<li><strong>Immutability:</strong> Try types are immutable, which fits
+well with functional programming principles.</li>
+<li><strong>Functional Composition:</strong> Try types can be easily
+composed using functional methods like map, flatMap, recover, etc.,
+allowing for clean and readable error-handling code.</li>
+</ul>
+<p>In Typescript the Try type could be represented as simply as:</p>
+<pre class="typescript"><code>type Try&lt;T, E extends Error = Error&gt; = T | E;</code></pre>
+<p>From that base type, we can build a simple API on top of it for
+working with Try’s in a Typescript code base.</p>
+<ul>
+<li><strong>asyncTry</strong> and <strong>syncTry</strong>: Functions
+that execute asynchronous and synchronous operations, respectively, and
+return a Try type.</li>
+<li><strong>getOrDefault</strong> and <strong>getOrElse</strong>:
+Functions to extract the value from a Try, providing a default value or
+a default function to handle errors.</li>
+</ul>
+<p>Let’s look at the implementation of those:</p>
+<pre class="typescript"><code>async function asyncTry&lt;T, E extends Error = Error&gt;(
+  input: PromiseLike&lt;T&gt;,
+): Promise&lt;Try&lt;T, E&gt;&gt; {
+  try {
+    const v = await input;
+    
+    return v;
+  } catch (err) {
+    return err as E;
+  }
+}
+  
+function syncTry&lt;T, E extends Error = Error&gt;(input: () =&gt; T): Try&lt;T, E&gt; {
+  try {
+    const v = input();
+      
+    return v;
+  } catch (err) {
+    return err as E;
+  }
+}      
+
+function getOrDefault&lt;T, E extends Error = Error&gt;(
+  input: Try&lt;T, E&gt;,
+  defaultValue: T,
+): T {
+  if (input instanceof Error) {
+    return defaultValue;
+  }
+  return input;
+}
+
+function getOrElse&lt;T, E extends Error = Error&gt;(
+  input: Try&lt;T, E&gt;,
+  defaultFn: () =&gt; T,
+): T {
+  if (input instanceof Error) {
+    return defaultFn();
+  }
+  return input;
+}    </code></pre>
+<p>So how do these functions get used. The best way to show that is to
+start with how error handling would be done without them. Let starts
+with two functions, one async, fetchData, and one synchronous,
+parseJSON.</p>
+<pre class="typescript"><code>async function fetchData(url: string): Promise&lt;string&gt; {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(&quot;Network response was not ok&quot;);
+  }
+  return response.text();
+}
+
+function parseJSON(jsonString: string): any {
+  return JSON.parse(jsonString);
+}</code></pre>
+<p>Both of these functions could throw errors. Javascript as a language
+has no concept such as checked exceptions, so nothing about the return
+type of either function is going to tell if it does throw a function.
+Consequentlyl, many developers err on the side of caution and wrap the
+functions in a try/catch. Many times, the entire block is wrapped in a
+single try/catch.</p>
+<pre class="typescript"><code>try {
+  const result = await fetchData(&quot;https://api.example.com/data&quot;);
+  const jsonObj = parseJSON(result);
+  console.dir(jsonObj);
+}
+catch (err) {
+  console.err(err);
+}</code></pre>
+<p>This code is fine, but it is not particularly flexible. If I wanted
+to do somethign different on the error from fetchData than I did on
+parseJSON, then it would look like this:</p>
+<pre class="typescript"><code>let result;
+try {
+  result = await fetchData(&quot;https://api.example.com/data&quot;);
+}
+catch (err) {
+  console.err(err);
+}
+
+try{
+  if(result) {
+    const jsonObj = parseJSON(result);
+    console.dir(jsonObj);
+  }
+}
+catch (err) {
+  console.err(err);
+  // soething else
+}</code></pre>
+<p>Notice how this change results in the variable, result, going from a
+const to let and then having to check to see if result is undefined
+before calling parseJSON. Try will allow to fix those problem, while
+also making making checking for an error something that can be caught as
+type error by the compiler.</p>
+<pre class="typescript"><code>const result = await asyncTry(fetchData(&quot;https://api.example.com/data&quot;));
+if (!(result instanceof Error)) {
+  const jsonObj = syncTry(() =&gt; parseJSON(result));
+  if (jsonObj instanceof Error) {
+    console.error(&quot;Failed to parse JSON:&quot;, jsonObj.message);
+  } else {
+    console.log(&quot;Parsed JSON:&quot;, jsonObj);
+  }
+}</code></pre>
+<p>With this we get back the const and the type system forces us to deal
+with the errors. It might be a bit more verbose, but it is much
+safer.</p>
+<p>So, let’s quickly look at some examples of getOrDefault and
+getOrElse.</p>
+<pre class="typescript"><code>const defaultValue = &quot;default value&quot;;
+
+const successResult: Try&lt;string&gt; = &quot;successful result&quot;;
+const errorResult: Try&lt;string&gt; = new Error(&quot;An error occurred&quot;);
+
+console.log(getOrDefault(successResult, defaultValue)); // Output: &quot;successful result&quot;
+console.log(getOrDefault(errorResult, defaultValue)); // Output: &quot;default value&quot;</code></pre>
+<p>and</p>
+<pre class="typescript"><code>const defaultFn = () =&gt; &quot;default value from function&quot;;
+
+const successResult: Try&lt;string&gt; = &quot;successful result&quot;;
+const errorResult: Try&lt;string&gt; = new Error(&quot;An error occurred&quot;);
+
+console.log(getOrElse(successResult, defaultFn)); // Output: &quot;successful result&quot;
+console.log(getOrElse(errorResult, defaultFn)); // Output: &quot;default value from function&quot;</code></pre>
+<p>Put it all together and you get:</p>
+<pre class="typescript"><code>const asyncResult = await asyncTry(fetchData(&quot;https://api.example.com/data&quot;));
+
+const result = getOrDefault(asyncResult, &quot;{}&quot;);
+const parsedResult = syncTry(() =&gt; parseJSON(result));
+
+const finalResult = getOrElse(
+  parsedResult,
+  () =&gt; {}
+);
+
+console.log(&quot;Async result:&quot;, asyncResult instanceof Error ? asyncResult.message : asyncResult);
+console.log(&quot;Final result:&quot;, finalResult);</code></pre>
+<p>Hopefully you can see the power of Try and how it can imporove your
+error handling and make your code safer.</p>
+</body>
+</html>
