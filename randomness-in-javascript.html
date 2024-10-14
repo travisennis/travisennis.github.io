@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>randomness-in-javascript</title>
+  <style>
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      background-color: #1a1a1a;
+      border: none;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.3.1/styles/monokai.min.css">
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.3.1/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script>
+</head>
+<body>
+<h1 id="randomness-in-javascript">Randomness in JavaScript</h1>
+<p>As I started to learn to code generative art, I came to realize that
+randomness is a huge part of the toolset. Most of the generative art I
+have written relies on randomness throughout the code; I’ll use
+randomness to pick my inputs, or choose my color palette, or alter the
+program’s execution. Randomness is so central to generative art that I
+have spent the last seveal months trying to understand it better. What
+folllows is brief introduction of random number generation in
+JavaScript.</p>
+<p>JavaScript provides a standard function, <code>Math.random</code>,
+that is defined in the <a
+href="http://www.ecma-international.org/ecma-262/11.0/index.html#sec-math.random">ECMAScript
+Specification</a>. It takes no arguments and returns a positive number
+from 0 up to but not including 1. For most purposes,
+<code>Math.random</code> is fine, but it does have its drawbacks. First,
+its algorithm is not defined and can vary from implementation to
+implementation. In practice, it seems that the major browsers and
+V8/Node have settled on <code>xorshift128+</code> as the algorithm, but
+that is not guaranteed (see <a
+href="https://v8.dev/blog/math-random">There’s Math.random(), and then
+there’s Math.random() · V8</a>). Second, <code>Math.random</code> is not
+cryptographically secure. In most cases, one doesn’t need a
+cryptographically secure PRNG, but if you do, then
+<code>Math.random</code> is not for you. In browsers, this deficiency
+has been addressed with <code>window.crypto.getRandomValues</code>. You
+could create an equivalent of <code>Math.random</code> that is backed by
+this API roughly like so:</p>
+<pre class="javascript"><code>function secureRandom() {
+    const arr = new Uint32Array(1)
+    windows.crypto.getRandomValues(arr)
+    return arr[0] / 4294967296
+}</code></pre>
+<p>In reality you would never do this. This would be much less
+performant than a simple call to <code>Math.random</code> and unless you
+are doing hashing, signature generation, or encryption/decryption, there
+is little need for it. And it still suffers from the third issue with
+built-in random function in JavaScript - no ability to repeat
+sequences.</p>
+<p>All random number generators are pseudo-random number generators,
+which means they generate sequences of numbers based on algorithm that
+alters an intial seed. With a different seed, you get a different
+sequence, but with the same seed the random number generator will repeat
+the same sequence every time. Unfortuantely you can’t seed the built-in
+<code>Math.random</code> or <code>window.crypto.getRandomValues</code>.
+You might ask why you would want to control the seed of the algorithm,
+but sometimes you need a complex seed to make your random sequence less
+predictable and sometimes you need a sequence that is completely
+predictable. This is frequently the case in generative art when you
+would want to recreate a piece of art. That predictability comes from
+being able to provide the seed. There are many seedable random number
+generators available in JavaScript:</p>
+<ul>
+<li><a
+href="https://github.com/davidbau/seedrandom">davidbau/seedrandom:
+seeded random number generator for Javascript</a></li>
+<li><a
+href="https://github.com/bryc/code/blob/master/jshash/PRNGs.md">Pseudorandom
+number generators</a></li>
+<li><a
+href="https://github.com/nquinlan/better-random-numbers-for-javascript-mirror">Better
+Random Numbers for Javascript</a></li>
+</ul>
+<p>In generative art libraries, there have been several choices
+made:</p>
+<ul>
+<li><a href="https://p5js.org/">p5.js</a> uses <code>LCG</code></li>
+<li><a href="https://threejs.org/">three.js</a> uses the Park-Miller
+algorithm for a seedable PRNG, but otherwise uses
+<code>Math.random</code></li>
+<li><a href="https://github.com/LingDong-/q5xjs">q5xjs</a> uses
+<code>Alea</code></li>
+</ul>
+<p>Which you choose are largely based on your use case, but for me I
+typically turn to the <code>mulberry32</code> implementation:</p>
+<pre class="javascript"><code>function mulberry32(a) {
+    return function() {
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      var t = Math.imul(a ^ a &gt;&gt;&gt; 15, 1 | a);
+      t = t + Math.imul(t ^ t &gt;&gt;&gt; 7, 61 | t) ^ t;
+      return ((t ^ t &gt;&gt;&gt; 14) &gt;&gt;&gt; 0) / 4294967296;
+    }
+}</code></pre>
+<p>It’s a minimalistic, 32-bit implemtentation that is pretty fast in
+JavaScript and has good randomness. And despite being 32-bit, its period
+(how long the random sequence goes before repeating) is still fairly
+large at around 4 billion. An 128-bit algorithm would have a larger
+period, but I don’t have a need for sequences that large.</p>
+<p>Once you have a seedable PRNG implementation, you have to choose how
+to generate a seed. At this point I base my strategy for selecting a
+seed on this article, <a
+href="https://www.r-bloggers.com/how-to-select-a-seed-for-simulation-or-randomization/">How
+to select a seed for simulation or randomization | R-bloggers</a>, as it
+seems a good enough strategy as any. In JavaScript, the code would
+be:</p>
+<pre class="javascript"><code>const seed = Date.now() % 10000</code></pre>
+<p>but if you want to go further, then an hash function could be used
+such as this MurmurHash3 implementation:</p>
+<pre class="javascript"><code>function xmur3 (str) {
+  let h = 1779033703 ^ str.length
+  for (let i = 0; i &lt; str.length; i++) {
+    h = Math.imul(h ^ str.charCodeAt(i), 3432918353)
+    h = h &lt;&lt; 13 | h &gt;&gt;&gt; 19
+  }
+  return function () {
+    h = Math.imul(h ^ h &gt;&gt;&gt; 16, 2246822507)
+    h = Math.imul(h ^ h &gt;&gt;&gt; 13, 3266489909)
+    return (h ^= h &gt;&gt;&gt; 16) &gt;&gt;&gt; 0
+  }
+}</code></pre>
+<p>which could be used as such:</p>
+<pre class="javascript"><code>const seed = xmur3(&#39;&#39; + Date.now() % 10000)
+const rand = mulberry32(seed())
+rand()</code></pre>
+<p>A good seed sometimes makes all the difference in the quality of the
+random number sequence being generated.</p>
+<p>Now that we can generate repeatable sequences of random numbers, we
+can put them to use. I find the following two functions to be useful
+additions:</p>
+<pre class="javascript"><code>function randomFloat (min, max) {
+  if (!max) {
+    max = min
+    min = 0
+  }
+
+  return rand() * (max - min) + min
+}
+
+function randomInt (min, max) {
+  if (!max) {
+    max = min
+    min = 0
+  }
+
+  return Math.floor(randomFloat(min, max))
+}</code></pre>
+<p>I can use <code>randomFloat</code> to randomly generate points on a
+canvas or RGB values for random colors.</p>
+<pre class="javascript"><code>// generate a random point on the canvas
+const x = randomFloat(context.canvas.width)
+const y = randomFloat(context.canvas.height)
+
+// generate random rgb values
+const r = randomFloat(256)
+const g = randomFloat(256)
+const b = randomFloat(256)
+const color = `rgb(${r}, ${g}, ${b})`</code></pre>
+<p>I can use <code>randomInt</code> to choose random indexes of an
+array. In fact, a <code>pick</code> function could be written to take
+advantage of that so that I can get a random element from an array:</p>
+<pre class="javascript"><code>function pick (array) {
+  if (array.length === 0) return undefined
+  return array[randomInt(array.length)]
+}</code></pre>
+<p>This just scratches the surface of what you can do with random
+numbers. Over time, you’ll find other uses for randomness, such as
+randomly shuffling arrays, adding probability and chance to a program’s
+execution, etc. There is plenty more to still learn.</p>
+</body>
+</html>
