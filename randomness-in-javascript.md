@@ -1,4 +1,8 @@
-# Randomness in JavaScript
+---
+title: Randomness in JavaScript
+author: Travis Ennis
+date: 2020-11-22
+---
 
 As I started to learn to code generative art, I came to realize that randomness is a huge part of the toolset. Most of the generative art I have written relies on randomness throughout the code; I'll use randomness to pick my inputs, or choose my color palette, or alter the program's execution. Randomness is so central to generative art that I have spent the last seveal months trying to understand it better. What folllows is brief introduction of random number generation in JavaScript.
 

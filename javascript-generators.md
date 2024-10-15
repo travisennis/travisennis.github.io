@@ -1,4 +1,8 @@
-# JavaScript Generators
+---
+title: JavaScript Generators
+author: Travis Ennis
+date: 2020-07-25
+---
 
 This is some background and references that I put together while developing my personal generator library, [travisennis/js-itertools](https://github.com/travisennis/js-itertools).
 

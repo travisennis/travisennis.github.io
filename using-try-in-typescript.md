@@ -1,4 +1,8 @@
-# Using Try in Typescript
+---
+title: Using Try in Typescript
+author: Travis Ennis
+date: 2024-10-13
+---
 
 The Try type is a programming construct used to represent the result of an operation that can either succeed or fail. It encapsulates a value of a specific type (T) if the operation succeeds, or an error (E) if the operation fails. This type is particularly useful in functional programming and error handling, as it allows functions to return results that clearly indicate success or failure without relying on exceptions or special return code. I originally came across the concept in Scala.
 

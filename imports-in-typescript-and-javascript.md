@@ -1,4 +1,8 @@
-# Imports in Typescript and Javascript
+---
+title: Imports in Typescript and Javascript
+author: Travis Ennis
+date: 2020-12-12
+---
 
 My first real experience with writing imports and exports for Javascript in Node was via Typescript where with the benefit of the compiler I was able to write the following:
 
