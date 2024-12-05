@@ -29,7 +29,7 @@ async function getUserData(id: string) {
                 : Try.failure(new Error('HTTP error'))
         )
         .map(processUserData)
-        .getOrElse(defaultUserData);
+        .unwrapOr(defaultUserData);
 }
 ```
 
@@ -37,47 +37,73 @@ It's considerably different. Let's get into the details.
 
 ## Core Implementation
 
-The core structure of Try wraps a value that might be either a success or a failure:
+The core structure of Try is implemented as an abstract class with two concrete implementations: Success and Failure:
 
 ```typescript
-export class Try<T> {
-    private constructor(private value: T | Error) {}
-    
+export abstract class Try<T> {
+    abstract readonly isSuccess: boolean;
+    abstract readonly isFailure: boolean;
+
     static success<T>(value: T): Try<T> {
-        return new Try(value);
+        return new Success(value);
     }
     
     static failure<T>(error: Error): Try<T> {
-        return new Try<T>(error);
+        return new Failure(error);
+    }
+}
+
+export class Success<T> extends Try<T> {
+    readonly isSuccess: boolean = true;
+    readonly isFailure: boolean = false;
+
+    constructor(readonly value: T) {
+        super();
+    }
+}
+
+export class Failure<T> extends Try<T> {
+    readonly isSuccess: boolean = false;
+    readonly isFailure: boolean = true;
+
+    constructor(readonly error: Error) {
+        super();
     }
 }
 ```
 
-The private constructor ensures that developers can only create Try instances through `success` and `failure` factory methods. This prevents invalid states and ensures consistent initialization, but perhaps the most important reason it is written this way is that when you see `Try.success` and `Try.failure` in the code there is no ambiguity about which is the succcess path and which is not. 
+The abstract class defines the interface that both Success and Failure must implement, while the static factory methods `success` and `failure` ensure that developers create Try instances in a consistent way. This design makes it immediately clear whether you're dealing with a success or failure case when you see `Try.success` or `Try.failure` in the code.
 
-The generic type parameter `T` allows Try to wrap any kind of value while maintaining type safety throughout operations. Inside the class, the value is stored as a union type `T | Error`. This internal representation stays hidden from users, preventing direct access to potentially unsafe values.
+The generic type parameter `T` allows Try to wrap any kind of value while maintaining type safety throughout operations. The Success class holds the actual value, while the Failure class contains an Error instance.
 
 ## State Inspection
 
-The state inspection methods provide the foundation for working with Try values:
+The state inspection methods are now implemented as readonly properties and type guards:
 
 ```typescript
-isSuccess(): boolean {
-    return !(this.value instanceof Error);
+// Properties on Try instances
+readonly isSuccess: boolean;
+readonly isFailure: boolean;
+
+// Type guard functions
+export function isSuccess<T>(tryValue: Try<T>): tryValue is Success<T> {
+    return tryValue.isSuccess;
 }
 
-isFailure(): boolean {
-    return this.value instanceof Error;
+export function isFailure<T>(tryValue: Try<T>): tryValue is Failure<T> {
+    return tryValue.isFailure;
 }
 ```
 
-These methods determine whether a Try instance represents a success or failure state. While simple, they're crucial for making decisions about how to process values:
+These properties and type guards are crucial for making decisions about how to process values and provide TypeScript with type information:
 
 ```typescript
 const userProfile = await fetchUserProfile(userId);
-if (userProfile.isSuccess()) {
-    renderProfile(userProfile.unsafeGet());
+if (isSuccess(userProfile)) {
+    // TypeScript knows userProfile is Success<Profile> here
+    renderProfile(userProfile.value);
 } else {
+    // TypeScript knows userProfile is Failure<Profile> here
     showErrorState();
     metrics.incrementCounter('profile_load_failures');
 }
@@ -88,77 +114,52 @@ State inspection often precedes value extraction or serves as a branching point 
 ```typescript
 const processData = (input: string) => {
     const result = parseData(input);
-    if (result.isFailure()) {
+    if (isFailure(result)) {
         // Handle the error early
         notifyAdmin('Data parsing failed');
         return defaultResponse();
     }
     
     // Continue with processing
-    return transformData(result.unsafeGet());
+    return transformData(result.unwrap());
 };
 ```
 
 ## Value Extraction
 
-The Value Extraction methods form the core interface for working with Try values. Each method addresses specific use cases and trade-offs in error handling:
+The Value Extraction methods provide different ways to safely access the wrapped value in a Try instance:
 
 ```typescript
-unsafeGet(): T {
-    if (this.isFailure()) {
-        throw new Error("Cannot get value from a failed Try");
-    }
-    return this.value as T;
-}
-
-getOrElse(defaultValue: T): T {
-    return this.isSuccess() ? (this.value as T) : defaultValue;
-}
-
-getOrThrow(): T {
-    if (this.isFailure()) {
-        throw this.value;
-    }
-    return this.value as T;
-}
-
-ok() {
-  if (this.isFailure()) {
-    return Option.none<T>();
-  }
-  return Option.some<T>(this.value as T);
-}
-
-failSilently(callback: (e: Error) => void) {
-    if (this.isFailure()) {
-        callback(this.value as Error);
-        return Option.none<T>();
-    }
-    return Option.some<T>(this.value as T);
-}
+abstract unwrap(): T;
+abstract unwrapOr(defaultValue: T): T;
+abstract ok(): Option<T>;
+abstract match<U>(pattern: {
+    success: (value: T) => U;
+    failure: (error: Error) => U;
+}): U;
 ```
 
-### unsafeGet: Direct Access with Risk
+### unwrap: Direct Access with Risk
 
-`unsafeGet` provides direct access to the success value. The "unsafe" prefix serves as a warning: this method will throw if called on a failure. Use it when you're certain the Try contains a success value, typically after checking with `isSuccess()`:
+`unwrap` provides direct access to the success value but will throw if called on a failure. Use it when you're certain the Try contains a success value, typically after checking with `isSuccess`:
 
 ```typescript
 const userAge = syncTry(() => getUserAge())
-if (userAge.isSuccess()) {
-    // Safe to use unsafeGet here
-    const age = userAge.unsafeGet();
+if (userAge.isSuccess) {
+    // Safe to use unwrap here
+    const age = userAge.unwrap();
     console.log(`User is ${age} years old`);
 }
 ```
 
-### getOrElse: Safe Defaults
+### unwrapOr: Safe Defaults
 
-`getOrElse` handles failure cases by providing a default value. This method never throws, making it ideal for situations where the computation should continue even if the original value is unavailable:
+`unwrapOr` handles failure cases by providing a default value. This method never throws, making it ideal for situations where the computation should continue even if the original value is unavailable:
 
 ```typescript
 // User settings with defaults
 const settings = tryGetUserSettings(userId)
-    .getOrElse({
+    .unwrapOr({
         theme: "light",
         fontSize: 12,
         language: "en"
@@ -168,32 +169,41 @@ const settings = tryGetUserSettings(userId)
 applyUserSettings(settings);
 ```
 
-### getOrThrow: Error Propagation
+### match: Pattern Matching
 
-`getOrThrow` is similar to `unsafeGet` but throws the original error instead of a new one. This preserves the error stack trace and context, making it valuable for error reporting and debugging:
+`match` provides a powerful way to handle both success and failure cases in a single expression:
 
 ```typescript
-try {
-    const data = parseConfigFile()
-        .flatMap(validateConfig)
-        .getOrThrow();
-    // Use validated config
-} catch (error) {
-    // Error maintains its original context
-    reportError("Config validation failed", error);
+const result = tryGetUserData(userId).match({
+    success: (user) => `Welcome, ${user.name}!`,
+    failure: (error) => `Failed to load user: ${error.message}`
+});
+```
+
+Pattern matching is particularly useful when you need to transform both success and failure cases into a common type:
+
+```typescript
+interface ApiResponse {
+    status: 'success' | 'error';
+    data?: any;
+    error?: string;
 }
+
+const response = tryFetchData().match({
+    success: (data): ApiResponse => ({
+        status: 'success',
+        data
+    }),
+    failure: (error): ApiResponse => ({
+        status: 'error',
+        error: error.message
+    })
+});
 ```
 
 ### ok: Bridging Try and Option
 
 `ok` creates a bridge between Try and Option types. While Try represents a computation that might fail with an error, Option represents a value that might not exist. This method transforms error cases into absent values while preserving success cases:
-
-This transformation is useful when you need to:
-1. Log or track errors without throwing them
-2. Convert error states into missing values
-3. Switch from error-centric to presence-centric logic
-
-Consider this example:
 
 ```typescript
 const userPreferences = tryLoadPreferences().ok();
@@ -201,7 +211,7 @@ const userPreferences = tryLoadPreferences().ok();
 // userPreferences is now Option<Preferences>
 // Instead of asking "did it fail?", we ask "is it present?"
 if (userPreferences.isSome()) {
-    applyPreferences(userPreferences.get());
+    applyPreferences(userPreferences.unwrap());
 } else {
     useDefaultPreferences();
 }
@@ -226,28 +236,9 @@ const findUser = (id: string): Option<User> => {
 // Usage focuses on presence rather than errors
 const user = findUser(id);
 if (user.isSome()) {
-    welcomeUser(user.get());
+    welcomeUser(user.unwrap());
 } else {
     showSignUpPrompt();
-}
-```
-
-### failSilently: ok with a callback
-
-`failSilently` is like `ok` but with a callback that will be executed on the failure path. This allows for things like logging or metrics to be done when errors are encountered:
-
-```typescript
-const userPreferences = tryLoadPreferences()
-    .failSilently(error => {
-        analytics.trackError("preferences_load_failed", error);
-    });
-
-// userPreferences is now Option<Preferences>
-// Instead of asking "did it fail?", we ask "is it present?"
-if (userPreferences.isSome()) {
-    applyPreferences(userPreferences.get());
-} else {
-    useDefaultPreferences();
 }
 ```
 
@@ -256,38 +247,9 @@ if (userPreferences.isSome()) {
 The transformation methods enable complex operations while maintaining error handling context. Each method serves a specific purpose in data transformation pipelines:
 
 ```typescript
-map<U>(f: (value: T) => U): Try<U> {
-    if (this.isFailure()) {
-        return Try.failure(this.value as Error);
-    }
-    try {
-        return Try.success(f(this.value as T));
-    } catch (e) {
-        return Try.failure(e instanceof Error ? e : new Error(String(e)));
-    }
-}
-
-flatMap<U>(f: (value: T) => Try<U>): Try<U> {
-    if (this.isFailure()) {
-        return Try.failure(this.value as Error);
-    }
-    try {
-        return f(this.value as T);
-    } catch (e) {
-        return Try.failure(e instanceof Error ? e : new Error(String(e)));
-    }
-}
-
-recover(f: (error: Error) => T): Try<T> {
-    if (this.isSuccess()) {
-        return this;
-    }
-    try {
-        return Try.success(f(this.value as Error));
-    } catch (e) {
-        return Try.failure(e instanceof Error ? e : new Error(String(e)));
-    }
-}
+abstract map<U>(fn: (value: T) => U): Try<U>;
+abstract flatMap<U>(fn: (value: T) => Try<U>): Try<U>;
+abstract recover(fn: (error: Error) => T): Try<T>;
 ```
 
 ### map: Simple Transformations
@@ -301,6 +263,17 @@ const userAge = parseUserData(rawData)
     .map(age => `Age next year: ${age}`);
 ```
 
+If the mapping function throws an error, it will be caught and wrapped in a Failure:
+
+```typescript
+const result = Try.success("123")
+    .map(x => {
+        throw new Error("Oops!");
+        return parseInt(x);
+    });
+// result is Failure<number> containing the "Oops!" error
+```
+
 ### flatMap: Complex Transformations
 
 While `map` transforms values directly:
@@ -309,9 +282,7 @@ While `map` transforms values directly:
 `flatMap` handles nested transformations:
     `Try<A> -> (A -> Try<B>) -> Try<B>`
 
-`flatMap` handles operations that themselves return Try values. This prevents nested Try instances and maintains clean error handling.
-
-This is crucial when you have operations that might fail in your Try chain:
+`flatMap` handles operations that themselves return Try values. This prevents nested Try instances and maintains clean error handling:
 
 ```typescript
 // With map (leads to Try<Try<User>>):
@@ -333,6 +304,16 @@ const userSettings = loadUserSettings(userId)
         logger.warn(`Failed to load settings: ${error.message}`);
         return getDefaultSettings();
     });
+```
+
+If the recovery function throws, the Try will contain the new error:
+
+```typescript
+const result = Try.failure(new Error("First error"))
+    .recover(error => {
+        throw new Error("Recovery failed");
+    });
+// result is Failure containing "Recovery failed" error
 ```
 
 ## Utility Functions
@@ -365,7 +346,7 @@ Use `syncTry` for operations that might throw errors:
 ```typescript
 const parsedData = syncTry(() => JSON.parse(rawData))
     .map(data => processData(data))
-    .getOrElse(defaultData);
+    .unwrapOr(defaultData);
 ```
 
 ### asyncTry: Handling Promises
@@ -374,11 +355,32 @@ const parsedData = syncTry(() => JSON.parse(rawData))
 
 ```typescript
 const userData = await asyncTry(fetch('/api/user'))
-    .flatMap(response => syncTry(() => response.json()))
-    .recover(error => ({ 
-        status: 'error',
-        message: error.message 
-    }));
+    .flatMap(response => 
+        response.ok 
+            ? asyncTry(response.json())
+            : Try.failure(new Error('HTTP error'))
+    )
+    .match({
+        success: data => ({ status: 'success', data }),
+        failure: error => ({ 
+            status: 'error',
+            message: error.message 
+        })
+    });
+```
+
+## Serialization
+
+Try instances can be serialized to JSON and converted to strings:
+
+```typescript
+const success = Try.success(42);
+console.log(success.toString()); // "Try.success(42)"
+console.log(JSON.stringify(success)); // {"type":"Try.success","value":42}
+
+const failure = Try.failure(new Error("oops"));
+console.log(failure.toString()); // "Try.failure(Error: oops)"
+console.log(JSON.stringify(failure)); // {"type":"Try.failure","value":{}}
 ```
 
 ## When to Choose Try
@@ -389,6 +391,7 @@ Try is particularly valuable when:
 2. Error handling is part of your domain logic
 3. You need to transform errors in a consistent way
 4. You want to make error handling explicit in your API
+5. You need to pattern match on success and failure cases
 
 Avoid Try when:
 
@@ -398,33 +401,52 @@ Avoid Try when:
 
 ## Testing Try-based Code
 
-Try makes testing easier by making error paths explicit:
+Try makes testing easier by making error paths explicit and providing type guards for precise type checking:
 
 ```typescript
 describe('getUserData', () => {
     it('handles successful responses', async () => {
         const result = await getUserData('123');
-        expect(result.isSuccess()).toBe(true);
-        expect(result.unsafeGet()).toEqual(expectedData);
+        expect(isSuccess(result)).toBe(true);
+        if (isSuccess(result)) {
+            expect(result.value).toEqual(expectedData);
+        }
     });
 
     it('handles network errors', async () => {
         const result = await getUserData('invalid');
-        expect(result.isFailure()).toBe(true);
-        expect(result.getOrElse(defaultData)).toEqual(defaultData);
+        expect(isFailure(result)).toBe(true);
+        expect(result.unwrapOr(defaultData)).toEqual(defaultData);
+    });
+
+    it('transforms data correctly', async () => {
+        const result = await getUserData('123');
+        const formatted = result.match({
+            success: user => `User: ${user.name}`,
+            failure: error => `Error: ${error.message}`
+        });
+        expect(formatted).toEqual('User: John');
     });
 });
 ```
 
 ## Common Pitfalls
 
-1. Overuse of `unsafeGet`:
+1. Using `unwrap` without checking:
 ```typescript
 // Bad
-const value = try.unsafeGet(); // Might throw
+const value = try.unwrap(); // Might throw
 
 // Good
-const value = try.getOrElse(defaultValue);
+if (isSuccess(try)) {
+    const value = try.unwrap();
+}
+
+// Better
+const value = try.match({
+    success: value => value,
+    failure: error => defaultValue
+});
 ```
 
 2. Nested Try instances:
@@ -437,90 +459,117 @@ const flat = Try.success(value)
     .flatMap(v => processValue(v));
 ```
 
-3. Mixing Try with traditional try-catch:
+3. Not using pattern matching when it would be clearer:
 ```typescript
-// Bad
-try {
-    const result = someOperation()
-        .getOrThrow();
-} catch (e) {
-    // This defeats the purpose of using Try
+// Less clear
+let result;
+if (isSuccess(try)) {
+    result = processSuccess(try.value);
+} else {
+    result = handleError(try.error);
 }
 
-// Good
-const result = someOperation()
-    .recover(error => handleError(error));
+// Clearer
+const result = try.match({
+    success: value => processSuccess(value),
+    failure: error => handleError(error)
+});
 ```
 
 ## Practical Examples
 
 Let's look at some real-world scenarios where Try shines:
 
-### Parsing JSON
-```typescript
-const parseJSON = (input: string) => syncTry(() => JSON.parse(input))
-    .map(data => data.username)
-    .getOrElse("anonymous");
-
-// Success case
-const result1 = parseJSON('{"username": "john"}'); // "john"
-// Failure case
-const result2 = parseJSON('invalid json'); // "anonymous"
-```
-
-### API Calls
-```typescript
-async function fetchUserData(userId: string) {
-    const response = await asyncTry(fetch(`/api/users/${userId}`));
-    const result = response
-        .flatMap(r => syncTry(() => r.json() as Promise<Record<string, string>>))
-        .recover(error => Promise.resolve({ name: "Unknown", error: error.message }));
-
-    return result;
-}
-```
-
-### Chaining Operations
-```typescript
-type User = Record<string, string>;
-
-interface Body {
-    user: User;
-}
-
-function validateUser(user: User): Try<User> {
-    if (user.test) {
-        return Try.failure(new Error("invalid"));
-    }
-    return Try.success(user);
-}
-
-function formatUserData(user: User) {
-    return user.toString();
-}
-
-function processUserData(input: string) {
-    return syncTry(() => JSON.parse(input) as Body)
-        .map(data => data.user)
-        .flatMap(user => validateUser(user))
-        .map(user => formatUserData(user))
-        .failSilently(error => console.log(`Processing failed: ${error.message}`));
-}
-```
-
-### Configuration Loading
+### Parsing and Validating Configuration
 
 ```typescript
-const loadConfig = (path: string) => {
+interface Config {
+    port: number;
+    host: string;
+    timeout: number;
+}
+
+function loadConfig(path: string): Try<Config> {
     return syncTry(() => fs.readFileSync(path, 'utf8'))
         .flatMap(content => syncTry(() => JSON.parse(content)))
-        .recover(error => ({
-            // Provide sensible defaults on failure
-            port: 3000,
-            host: 'localhost',
-            error: `Failed to load config: ${error.message}`
-        }));
-};
+        .flatMap(json => validateConfig(json))
+        .match({
+            success: config => Try.success(config),
+            failure: error => Try.success({
+                port: 3000,
+                host: 'localhost',
+                timeout: 5000
+            })
+        });
+}
+```
+
+### API Data Processing Pipeline
+
+```typescript
+interface UserData {
+    id: string;
+    profile: Record<string, unknown>;
+}
+
+async function processUserData(userId: string) {
+    return await asyncTry(fetch(`/api/users/${userId}`))
+        .flatMap(response => 
+            response.ok 
+                ? asyncTry(response.json())
+                : Try.failure(new Error(`HTTP ${response.status}`))
+        )
+        .flatMap(data => validateUserData(data))
+        .map(enrichUserData)
+        .match({
+            success: (data: UserData) => ({
+                status: 'success',
+                data,
+                timestamp: new Date()
+            }),
+            failure: error => ({
+                status: 'error',
+                error: error.message,
+                timestamp: new Date()
+            })
+        });
+}
+```
+
+### Form Validation
+
+```typescript
+interface FormData {
+    email: string;
+    age: number;
+}
+
+function validateForm(input: unknown): Try<FormData> {
+    return syncTry(() => {
+        if (typeof input !== 'object' || !input) {
+            throw new Error('Invalid input');
+        }
+        
+        const { email, age } = input as Record<string, unknown>;
+        
+        if (typeof email !== 'string' || !email.includes('@')) {
+            throw new Error('Invalid email');
+        }
+        
+        if (typeof age !== 'number' || age < 0) {
+            throw new Error('Invalid age');
+        }
+        
+        return { email, age };
+    });
+}
+
+const result = validateForm({ email: 'test@example.com', age: 25 })
+    .map(data => enrichFormData(data))
+    .match({
+        success: data => ({ valid: true, data }),
+        failure: error => ({ valid: false, error: error.message })
+    });
 ```
 
 ## Conclusion
@@ -531,8 +580,8 @@ First, it makes error handling explicit and impossible to ignore. Unlike promise
 
 Second, it enables composition of operations that might fail. The transformation methods (`map`, `flatMap`, and `recover`) create clean pipelines that handle errors automatically, reducing boilerplate and improving code clarity.
 
-Third, through its integration with Option via `failSilently`, Try provides flexibility in how errors are conceptualized. Developers can choose whether to treat missing data as an error condition or simply as an absent value, depending on what makes more sense for their domain.
+Third, through pattern matching and the Option type bridge, Try provides flexibility in how errors are handled and transformed. Developers can choose whether to handle errors directly, convert them to optional values, or transform both success and failure cases into a common type.
 
 For TypeScript developers, Try offers a path toward more maintainable codebases. It replaces scattered try-catch blocks with a consistent pattern that scales well as applications grow. When combined with other functional programming patterns, it forms part of a robust toolkit for handling complexity in modern applications.
 
-The key to effective use of Try lies not just in understanding its mechanics, but in recognizing when to use each of its tools. Whether you need the strict error handling of `getOrThrow`, the safe defaults of `getOrElse`, or the presence-absence semantics of `failSilently`, Try provides the right tool for each situation.
+The key to effective use of Try lies not just in understanding its mechanics, but in recognizing when to use each of its tools. Whether you need the strict error handling of `unwrap`, the safe defaults of `unwrapOr`, or the expressive power of pattern matching, Try provides the right tool for each situation.
