@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="Travis Ennis" />
+  <meta name="dcterms.date" content="2025-01-30" />
+  <title>Useful NPX Commands for Node Developers</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="style.css" />
+  
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.3.1/styles/monokai.min.css">
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.3.1/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Useful NPX Commands for Node Developers</h1>
+<p class="author">Travis Ennis</p>
+<p class="date">2025-01-30</p>
+</header>
+<p>Over the years, I’ve collected some useful tools that made some
+common tasks I need to do while working on Node project a whole lot
+easier. The following <code>npx</code> commands have been some of my
+favorites.</p>
+<h2 id="generate-.gitignore-files">1. Generate .gitignore Files</h2>
+<pre class="bash"><code>npx gitignore &lt;language&gt;</code></pre>
+<p>This command generates .gitignore files using GitHub’s official
+collection of templates. Just specify your language and get the
+appropriate .gitignore file.</p>
+<h2 id="create-license-files">2. Create License Files</h2>
+<pre class="bash"><code>npx license &lt;license&gt;</code></pre>
+<p>This command generates a standardized LICENSE file with appropriate
+text, automatically including the current year and project details. It
+supports various license types including MIT, Apache, and GPL.</p>
+<h2 id="check-node.js-security">3. Check Node.js Security</h2>
+<pre class="bash"><code>npx is-my-node-vulnerable</code></pre>
+<p>This command scans Node.js installations for known security
+vulnerabilities and indicates when updates are needed for security
+purposes.</p>
+<h2 id="hunt-down-unused-code">4. Hunt Down Unused Code</h2>
+<pre class="bash"><code>npx knip</code></pre>
+<p>This tool identifies unused files, dependencies, and exports in
+JavaScript/TypeScript projects. It helps maintain code quality by
+detecting dead code, which can improve maintainability and reduce bundle
+sizes.</p>
+<h2 id="interactive-dependency-updates">5. Interactive Dependency
+Updates</h2>
+<pre class="bash"><code>npx npm-check-updates --interactive --format group</code></pre>
+<p>This interactive tool provides organized package update management,
+with updates categorized by major, minor, and patch versions. It allows
+selective updating of dependencies.</p>
+<h2 id="clean-up-node_modules">6. Clean Up node_modules</h2>
+<pre class="bash"><code>npx npkill</code></pre>
+<p>Another interactive tool that locates and removes node_modules
+directories across your system. It is particularly useful when working
+with multiple projects and managing disk space.</p>
+<hr />
+<p>These commands address common development tasks and can improve
+workflow efficiency.</p>
+</body>
+</html>
